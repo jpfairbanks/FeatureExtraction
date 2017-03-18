@@ -132,7 +132,7 @@ test_that("access", {
   
   #testDF <-as.data.frame(testResult)
   #print(testDF)
-  cat("Diff Time : ",basetime - (Sys.time()- baseStart))
+  cat("Diff Time : ", (Sys.time()- baseStart))
   #require(sqldf)
   
   #a1NotIna2 <- sqldf("SELECT * FROM testResult EXCEPT SELECT * FROM testResult")
