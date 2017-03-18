@@ -18,12 +18,13 @@ test_that("access", {
   
   library(DatabaseConnector)
   library(SqlRender)
+  library(compare)
   
   # connection details for the aws instance (password will be provided)
   dbms <- "redshift"
   user <- "synpuf_training"
   password <- "Abc12345!" #Sys.getenv('dbpasswd')
-  schema="cdm"
+  test_schema="cdm"
   
   # for the 1000 sample:
   #server <- "ohdsi.cxmbbsphpllo.us-east-1.redshift.amazonaws.com/synpuf1k"
@@ -106,34 +107,46 @@ test_that("access", {
     deleteCovariatesSmallCount = 2)
 
   baseStart<-Sys.time()
-   # baseResult<- getDbDefaultCovariateData(connection,
-   #                                        oracleTempSchema = NULL,
-   #                                        schema,
-   #                                        cdmVersion = "4",
-   #                                        cohortTempTable = "temp_cohort",
-   #                                        rowIdField = "subject_id",
-   #                                        covariateSettings,
-   #                                        sqlFile = "GetCovariates_old.sql")
+  baseResult<- FeatureExtraction::getDbDefaultCovariateData(connection,
+                                         oracleTempSchema = NULL,
+                                         cdmDatabaseSchema=test_schema,
+                                         cdmVersion = "5",
+                                         cohortTempTable = "scratch.ftf_cohort",
+                                         rowIdField = "subject_id",
+                                         covariateSettings,
+                                         sqlFile = "GetCovariates_old.sql")
    
   basetime <-Sys.time()- baseStart
  
-  #ffdf
+  baseCovarients<-as.data.frame(baseResult$covariates)
+  baseCovariateRef<-as.data.frame(baseResult$covariateRef)
+  baseMetaData<-as.data.frame(baseResult$metaData)
   
+  #disconnect from the db
+  dbDisconnect(connection)
+  #reconnect to database
+  connection <- connect(connectionDetails)
   
   testStart<-Sys.time()
-  testResult<- getDbDefaultCovariateData(connection,
+  testResult<- FeatureExtraction::getDbDefaultCovariateData(connection,
                                          oracleTempSchema = NULL,
-                                         schema,
+                                         cdmDatabaseSchema=test_schema,
                                          cdmVersion = "5",
                                          cohortTempTable = "scratch.ftf_cohort",
                                          rowIdField = "subject_id",
                                          covariateSettings,
                                          sqlFile = "GetCovariates.sql")
   
-  #testDF <-as.data.frame(testResult)
-  #print(testDF)
+
+  
   cat("Diff Time : ",basetime - (Sys.time()- baseStart))
-  #require(sqldf)
+  testCovarients<-as.data.frame(testResult$covariates)
+  testCovariateRef<-as.data.frame(testResult$covariateRef)
+  testMetaData<-as.data.frame(testResult$metaData)
+  
+  cat("Compare of baseCovarients 2 testCovarients",compare(baseCovarients,testCovarients))
+  cat("Compare of baseCovariateRef 2 testCovariateRef",compare(baseCovariateRef,testCovariateRef))
+  cat("Compare of baseMetaData 2 testMetaData",compare(baseMetaData,testMetaData))
   
   #a1NotIna2 <- sqldf("SELECT * FROM testResult EXCEPT SELECT * FROM testResult")
   #a1NotIna2
