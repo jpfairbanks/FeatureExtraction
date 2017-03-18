@@ -580,7 +580,8 @@ WHERE c1.vocabulary_id = 'MedDRA'
 {@has_included_covariate_concept_ids} ? {	AND c1.concept_id IN (SELECT concept_id FROM #included_cov)}
 
 {@use_covariate_condition_group_snomed} ? { UNION }
-
+;
+	
 SELECT DISTINCT ca1.descendant_concept_id,
 	ca1.ancestor_concept_id
 FROM (

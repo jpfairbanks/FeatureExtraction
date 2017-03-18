@@ -563,24 +563,6 @@ from
 (
 
 {@use_covariate_condition_group_meddra} ? {
-IF OBJECT_ID('tempdb..#condition_group_meddra', 'U') IS NOT NULL
-	DROP TABLE #condition_group_meddra;
-
-SELECT c1.concept_id
-INTO #condition_group_meddra
-FROM @cdm_database_schema.concept c1
-{@cdm_version == '4'} ? {
-WHERE c1.vocabulary_id = 15
-} : { 
-WHERE c1.vocabulary_id = 'MedDRA'
-}
-	AND c1.@concept_class_id <> 'System Organ Class'
-	AND c1.concept_id NOT IN (36302170, 36303153, 36313966)
-{@has_excluded_covariate_concept_ids} ? {	AND c1.concept_id NOT IN (SELECT concept_id FROM #excluded_cov)}
-{@has_included_covariate_concept_ids} ? {	AND c1.concept_id IN (SELECT concept_id FROM #included_cov)}
-
-{@use_covariate_condition_group_snomed} ? { UNION }
-
 SELECT DISTINCT ca1.descendant_concept_id,
 	ca1.ancestor_concept_id
 FROM (
@@ -594,8 +576,19 @@ FROM (
 	) ccr1
 INNER JOIN @cdm_database_schema.concept_ancestor ca1
 	ON ccr1.concept_id = ca1.descendant_concept_id
-INNER JOIN #condition_group_meddra c1
+INNER JOIN @cdm_database_schema.concept c1
 	ON ca1.ancestor_concept_id = c1.concept_id
+{@cdm_version == '4'} ? {
+WHERE c1.vocabulary_id = 15
+} : { 
+WHERE c1.vocabulary_id = 'MedDRA'
+}
+	AND c1.@concept_class_id <> 'System Organ Class'
+	AND c1.concept_id NOT IN (36302170, 36303153, 36313966)
+{@has_excluded_covariate_concept_ids} ? {	AND c1.concept_id NOT IN (SELECT concept_id FROM #excluded_cov)}
+{@has_included_covariate_concept_ids} ? {	AND c1.concept_id IN (SELECT concept_id FROM #included_cov)}
+
+{@use_covariate_condition_group_snomed} ? { UNION }
 
 }
 
